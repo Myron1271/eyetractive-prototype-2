@@ -227,15 +227,13 @@ include(get_template_directory() . '/parts/blocks/blocks.php');
 
 ======================================================================================================================== */
 
-require_once get_template_directory() . '/lib/plugin-update-checker/plugin-update-checker.php';
-
+require plugin_dir_path(__FILE__) . 'lib/plugin-update-checker/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
-$updateChecker = PucFactory::buildThemeUpdateChecker(
-    'Blink', // De directorynaam van het thema
-    'https://github.com/Myron1271/eyetractive-prototype2/', // GitHub repo URL
-    'Blink' // Theme slug (directorynaam)
+$updateChecker = PucFactory::buildUpdateChecker(
+    'https://github.com/Myron1271/eyetractive-prototype-2',
+    get_theme_root() . '/Blink',
+    'Blink'
 );
 
-// Optioneel: forceer een bepaalde branch
 $updateChecker->setBranch('master');
