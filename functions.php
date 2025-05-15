@@ -237,3 +237,13 @@ $updateChecker = PucFactory::buildUpdateChecker(
 );
 
 $updateChecker->setBranch('master');
+
+/* ========================================================================================================================
+
+11. Block Copying
+
+======================================================================================================================== */
+
+require get_template_directory() . '/lib/admin-block-importer.php';
+
+?>
