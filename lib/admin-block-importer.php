@@ -16,28 +16,34 @@ function render_blink_block_importer_page() {
         return;
     }
 
-    $parentBlocksPath = get_template_directory() . '/parts/blocks/';
-    $childBlocksPath  = get_stylesheet_directory() . '/parts/blocks/';
-    $availableBlocks  = [];
+    $current_user = wp_get_current_user();
+    $current_user_email = $current_user->user_email;
+    if (!str_contains($current_user_email, "@live")) {
+        echo "<div class='notice notice-error notice-alt'><h2>Helaas je hebt geen toegang tot deze pagina!</h2></div>";
+        exit();
+    }
 
-    if (is_dir($parentBlocksPath)) {
-        $dirs = scandir($parentBlocksPath);
+    $parent_blocks_path = get_template_directory() . '/parts/blocks/';
+    $child_blocks_path  = get_stylesheet_directory() . '/parts/blocks/';
+    $available_blocks  = [];
+
+    if (is_dir($parent_blocks_path)) {
+        $dirs = scandir($parent_blocks_path);
         foreach ($dirs as $dir) {
-            if ($dir !== '.' && $dir !== '..' && is_dir($parentBlocksPath . $dir)) {
-                $availableBlocks[] = $dir;
+            if ($dir !== '.' && $dir !== '..' && is_dir($parent_blocks_path . $dir)) {
+                $available_blocks[] = $dir;
             }
         }
     }
-
-    empty($availableBlocks) ? $varDisabled = "disabled" : $varDisabled = "";
+    empty($available_blocks) ? $var_disabled = "disabled" : $var_disabled = "";
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_blocks'])) {
         $selected = array_map('sanitize_text_field', $_POST['selected_blocks']);
         $copied = [];
 
         foreach ($selected as $block) {
-            $src = $parentBlocksPath . $block;
-            $dest = $childBlocksPath . $block;
+            $src = $parent_blocks_path . $block;
+            $dest = $child_blocks_path . $block;
 
             if (!file_exists($dest)) {
                 blink_recursive_copy($src, $dest);
@@ -63,14 +69,14 @@ function render_blink_block_importer_page() {
             <p style="font-weight: bold; font-size: 0.8rem; color: #8c8d93; margin-top: -10px">(Doorgekruiste Blocks zijn (al) gekopieerd)</p>
 
             <p>
-                <input type="text" id="block-search" class="regular-text" placeholder="Zoek een block..." <?= $varDisabled?> style="width: 300px;">
+                <input type="text" id="block-search" class="regular-text" placeholder="Zoek een block..." <?= $var_disabled?> style="width: 300px;">
             </p>
 
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                 <tr>
                     <td class="manage-column column-cb check-column">
-                        <input id="cb-select-all-1" type="checkbox" <?= $varDisabled?> onclick="toggleAllCheckboxes(this)">
+                        <input id="cb-select-all-1" type="checkbox" <?= $var_disabled?> onclick="toggleAllCheckboxes(this)">
                     </td>
                     <th class="manage-column">Block Naam</th>
                 </tr>
@@ -79,15 +85,15 @@ function render_blink_block_importer_page() {
             <div style="max-height: 300px; overflow: auto; border: 1px solid #ccd0d4">
                 <table class="wp-list-table widefat fixed striped">
                     <tbody id="the-list">
-                    <?php if (empty($availableBlocks)) : ?>
+                    <?php if (empty($available_blocks)) : ?>
                         <td colspan="2" style="color: #979797; font-weight: bold; font-style: italic">Er zijn momenteel geen blocks in de parent theme</td>
                     <?php else : ?>
-                        <?php foreach ($availableBlocks as $block):
-                            $existsInChild = is_dir($childBlocksPath . $block);
-                            $disabled = $existsInChild ? 'disabled' : '';
-                            $rowClass = $existsInChild ? 'style="color: #999; text-decoration: line-through;"' : '';
+                        <?php foreach ($available_blocks as $block) :
+                            $exists_in_child = is_dir($child_blocks_path . $block);
+                            $disabled = $exists_in_child ? 'disabled' : '';
+                            $table_row_style = $exists_in_child ? 'style="color: #979797; text-decoration: line-through;"' : '';
                             ?>
-                            <tr <?= $rowClass; ?>>
+                            <tr <?= $table_row_style; ?>>
                                 <th scope="row" class="check-column">
                                     <input type="checkbox" name="selected_blocks[]" value="<?= ($block); ?>" <?= $disabled; ?>>
                                 </th>
@@ -120,9 +126,9 @@ function render_blink_block_importer_page() {
                     const noResultsRow = document.getElementById('no-results');
                     noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
                 });
-                    function toggleAllCheckboxes(master) {
+                function toggleAllCheckboxes(master) {
                     const checkboxes = document.querySelectorAll(
-                    '#the-list input[type="checkbox"]:not(:disabled)'
+                        '#the-list input[type="checkbox"]:not(:disabled)'
                     );
                     checkboxes.forEach(cb => cb.checked = master.checked);
                 }
@@ -139,16 +145,14 @@ function blink_recursive_copy($src, $dest) {
     while (false !== ($file = readdir($dir))) {
         if ($file === '.' || $file === '..') continue;
 
-        $srcPath = $src . '/' . $file;
-        $destPath = $dest . '/' . $file;
+        $src_block_path = $src . '/' . $file;
+        $dest_child_path = $dest . '/' . $file;
 
-        if (is_dir($srcPath)) {
-            blink_recursive_copy($srcPath, $destPath);
+        if (is_dir($src_block_path)) {
+            blink_recursive_copy($src_block_path, $dest_child_path);
         } else {
-            copy($srcPath, $destPath);
+            copy($src_block_path, $dest_child_path);
         }
     }
     closedir($dir);
 }
-
-
